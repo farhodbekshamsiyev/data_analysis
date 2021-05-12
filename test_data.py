@@ -1,93 +1,74 @@
-import datetime
-import glob
+import sys
 import os
-import re
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QPushButton, QFileDialog, QVBoxLayout
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
-pd.set_option('display.max_columns', None)
-pd.options.display.float_format = '{:.2f}'.format
+class MyApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.window_width, self.window_height = 800, 200
+        self.setMinimumSize(self.window_width, self.window_height)
 
-if not os.path.exists('csv_files'):
-    os.makedirs('csv_files')
-else:
-    print('Path exists')
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
-# To do!?
-# 1-> Math accuracy summing up journal number amounts
-# 2-> Data Integrity Check
-# 3-> B18 Benford's Law
+        self.options = ('Get File Name', 'Get File Names', 'Get Folder Dir', 'Save File Name')
 
-processed_files = []
-data_folder = "data"
-files = os.listdir(data_folder)
-ll = 0
-for f in files:
-    ll += 1
-    if not os.path.exists(f'csv_files/{f[:10]}v{ll}.cvs'):
-        print(f + " processed")
-        data_frame = pd.read_excel(f"data/{f}", index_col=None)
-        data_frame = data_frame[['Journal number', 'Date', 'Ledger account', 'Amount', 'Created date and time']]
-        data_frame['Ledger account'] = data_frame['Ledger account'].str.slice(0, 6)
-        data_frame.to_csv('csv_files/' + f[:10] + f"v{ll}.cvs", encoding='utf-8', index=False)
-        processed_files.append(f'{f[:10]}v{ll}.cvs')
-    else:
-        processed_files = os.listdir('csv_files/')
+        self.combo = QComboBox()
+        self.combo.addItems(self.options)
+        layout.addWidget(self.combo)
 
-if not os.path.exists('combined.csv'):
-    # files = [f for f in os.listdir('csv_files') if re.match(r'.*\.cvs', f)]
-    # combined_csv = pd.concat([pd.read_csv(f'csv_files/{processed_files}')], join='inner')
-    combined_csv = pd.concat([pd.read_csv(f'csv_files/{f}') for f in processed_files])
-    combined_csv.sort_values(['Ledger account'], ascending=True, inplace=True)
-    combined_csv.to_csv("combined.csv", index=False, encoding='utf-8-sig')
+        btn = QPushButton('Launch')
+        btn.clicked.connect(self.launchDialog)
+        layout.addWidget(btn)
 
-trial_balance = pd.read_excel("Trial balance_CLFL 2020.xlsx", index_col=None)
-combined_csv = pd.read_csv('combined.csv')
-grp = combined_csv.groupby(['Ledger account'])
-grp_jrnlnum = combined_csv.groupby(['Journal number'])
+    def launchDialog(self):
+        option = self.options.index(self.combo.currentText())
 
-# for i, j in grp_jrnlnum:
-#     if float(f"{j['Amount'].agg(np.sum):.2f}") != 0.00:
-#         print(f"{i} This entries' sum is not equal to 0.00 -> {j}")
-#     else:
-#         print(f"{i} Entries are equal to 0.00")
-#
-# if float(f"{combined_csv['Amount'].agg(np.sum):.2f}") != 0.00:
-#     print("Something is wrong with sum of all Amount entries")
-#     print("Plese do manual testing of each entry")
-# else:
-#     print("All amounts are equal to 0.00")
+        if option == 0:
+            response = self.getFileName()
+        elif option == 1:
+            response = self.getFileNames()
+        elif option == 2:
+            response = self.getDirectory()
+        elif option == 3:
+            response = self.getSaveFileName()
+        else:
+            print('Got Nothing')
 
-# print(combined_csv[combined_csv.isnull().any(axis=1)])
+    def getFileName(self):
+        file_filter = 'All Files (*.*);; Data File (*.xlsx *.csv *.dat);; Excel File (*.xlsx *.xls)'
+        response = QFileDialog.getOpenFileName(
+            parent=self,
+            caption='Select a data file',
+            directory=os.getcwd(),
+            filter=file_filter,
+            initialFilter='Excel File (*.xlsx *.xls)'
+        )
+        print(*response[0])
+        return response[0]
 
-print(isinstance(combined_csv['Date'], pd.DatetimeIndex, format()))
-# combined_csv['date'] = pd.to_datetime(combined_csv['Date'], format="%Y-%m-%d %H:%M:%S")
-# if datetime.datetime.strptime([f for f in combined_csv['Date']], format='%Y-%m-%d %H:%M:%S'):
-#     print("OK")
+    def getDirectory(self):
+        response = QFileDialog.getExistingDirectory(
+            self,
+            caption='Select a folder'
+        )
+        print(*response[0])
+        return response
 
-# if pd.to_datetime(combined_csv['Date'], format='%Y-%m-%d %H:%M:%S', dayfirst=True, errors='coerce').notnull().all():
-#     print("OK")
-# else:
-#     print("NO")
 
-# debit_sum = []
-# credit_sum = []
-# closing_sum = []
-# k = 0
-# for i, j in grp:
-#     k += 1
-#     gt_debits = j[j['Amount'] > 0]
-#     lt_credits = j[j['Amount'] < 0]
-#     debit = float(f"{gt_debits['Amount'].agg(np.sum):.2f}")
-#     credit = float(f"{lt_credits['Amount'].agg(np.sum):.2f}") * (-1)
-#     debit_sum.append(debit)
-#     credit_sum.append(credit)
-#     closing_sum.append(float(f"{(debit - credit):.2f}"))
-#
-# trial_balance['GL Debits'] = debit_sum
-# trial_balance['GL Credits'] = credit_sum
-# trial_balance['GL Closing balance'] = closing_sum
-# trial_balance['GL Difference'] = trial_balance['Closing balance'] - closing_sum
-# trial_balance.to_csv("Result Trial balance_CLFL 2020.csv", index=False, encoding='utf-8-sig')
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    app.setStyleSheet('''
+        QWidget {
+            font-size: 35px;
+        }
+    ''')
+
+    myApp = MyApp()
+    myApp.show()
+
+    try:
+        sys.exit(app.exec_())
+    except SystemExit:
+        print('Closing Window...')
