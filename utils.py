@@ -19,6 +19,10 @@ def check_path(a):
         print('Path exists')
 
 
+def get_dataframe(name):
+    return pd.read_csv(name)
+
+
 def getFileNames(self):
     file_filter = 'All Files (*.*);; Data File (*.xlsx *.csv *.dat);; Excel File (*.xlsx *.xls)'
     filedialog = QFileDialog()
@@ -79,18 +83,18 @@ def convert_xls2csv(fileNames):
     return "converted.csv"
 
 
-def output_result_csv(name, temp, column_name):
+def output_result_csv(name, dataframe, column_name):
     check_path('results')
-    # dataframe_main = pd.read_csv('combined.csv')
+    dataframe_main = pd.read_csv('converted.csv')
+    dataframe = pd.DataFrame(dataframe, columns=[column_name])
     # temp = pd.DataFrame({column_name: temp})
     # temp.reset_index(drop=True, inplace=True)
     # dataframe_main.reset_index(drop=True, inplace=True)
-    # print(dataframe.info())
-    # dataframe_main = dataframe_main.loc[dataframe_main[column_name].str.contains(temp)][
-    #     'Journal number', 'Date', 'Amount']
-    # dataframe_main = dataframe_main.loc[temp[column_name] == dataframe_main[column_name]][
-    #     'Journal number', 'Date', 'Amount']
-    temp.to_csv(f'results/{name}.csv', index=False, encoding='utf-8')
+
+    # dataframe = dataframe_main.merge(dataframe, how='inner')
+    dataframe = dataframe_main.loc[
+        dataframe_main['Journal number'].isin(dataframe['Journal number'].tolist())]
+    dataframe.to_csv(f'results/{name}.csv', index=False, encoding='utf-8')
 
 
 def programExit(self):
@@ -103,3 +107,10 @@ def programExit(self):
         pass
         # QMessageBox.information(self, '', "Nothing Changed")
 
+
+def run_on_excel(name):
+    os.system(f'start excel.exe {os.path.abspath(name)}')
+
+
+def info_message(self, text):
+    QMessageBox.information(self, '', f'{text}')

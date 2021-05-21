@@ -117,64 +117,93 @@ def finding_wrong_entries(dataframe):
     """
     Finding wrong entries
     """
+    print("Out of bound entries is running...")
     dataframe = dataframe[['Journal number', 'Date', 'Created date and time']]
-    print(dataframe.loc[dataframe['Date'].isnull()]['Journal number'])
-    print(dataframe.loc[dataframe['Created date and time'].isnull()]['Journal number'])
+    dataframe = \
+        dataframe[pd.isnull(dataframe['Date']) | pd.isnull(dataframe['Created date and time'])][
+            'Journal number']
+    output_result_csv('finding_wrong_entries', dataframe, 'Journal number')
+    # print(dataframe)
+    # print(dataframe.loc[dataframe['Created date and time'].isnull()]['Journal number'])
 
 
-def out_of_bound_entries(dataframe):
+# finding_wrong_entries(get_dataframe('converted.csv'))
+
+
+def out_of_bound_entries(dataframe, start_date='2020-02-01 00:00:00',
+                         end_date='2020-12-31 23:59:59'):
     """
     Finding out of bound entries
     """
+    print("Out of bound entries is running...")
     dataframe = dataframe[['Journal number', 'Date', 'Created date and time']]
-    print(dataframe.loc[(dataframe['Date'] < '2020-02-01 00:00:00') | (
-            dataframe['Date'] > '2020-12-31 23:59:59')]['Journal number'])
+    dataframe = dataframe.loc[(dataframe['Date'] < '2020-02-01 00:00:00') | (
+            dataframe['Date'] > '2020-12-31 23:59:59')]['Journal number']
+    output_result_csv('out_of_bound_entries', dataframe, 'Journal number')
+    # print(dataframe.loc[(dataframe['Date'] < '2020-02-01 00:00:00') | (
+    #         dataframe['Date'] > '2020-12-31 23:59:59')]['Journal number'])
 
 
 def weekend_entries(dataframe):
     """
     Finding weekend entries done
     """
+    print("Finding weekend is running...")
     dataframe = dataframe[['Journal number', 'Created date and time']]
-    weekend_entries = dataframe.loc[dataframe['Created date and time'].dt.dayofweek > 4][
+    dataframe = dataframe.loc[dataframe['Created date and time'].dt.dayofweek > 4][
         'Journal number']
-    print(weekend_entries)
-    print(len(weekend_entries))
+    output_result_csv('weekend_entries', dataframe, 'Journal number')
+    # print(dataframe)
+    # print(len(dataframe))
 
 
 def holiday_entries(dataframe):
     """
     Finding holidays done
     """
+    print("Finding holidays is running...")
     dataframe = dataframe[['Journal number', 'Created date and time']]
     holiday_years = [x for x in
                      range(dataframe['Created date and time'].dt.year.min().astype(int),
                            dataframe['Created date and time'].dt.year.max().astype(int) + 1)]
     holidays_canada = holidays.CountryHoliday('CA', prov='AB', years=holiday_years)
     vals = list(map(lambda x: x.strftime('%Y-%m-%d'), [x for x in holidays_canada.keys()]))
-    print(dataframe.loc[dataframe['Created date and time'].dt.date.astype('datetime64').isin(vals)][
-              'Journal number'])
+    dataframe = \
+        dataframe.loc[dataframe['Created date and time'].dt.date.astype('datetime64').isin(vals)][
+            'Journal number']
+    output_result_csv('holiday_entries', dataframe, 'Journal number')
+    # print(dataframe.loc[dataframe['Created date and time'].dt.date.astype('datetime64').isin(vals)][
+    #           'Journal number'])
 
 
 def unusual_times(dataframe):
     """
     Unusual times done
     """
+    print("Unusual times is running...")
     dataframe = dataframe[['Journal number', 'Created date and time']]
     # print(dataframe.loc[(dataframe['Created date and time'] < '08:00:00') | (
     #         dataframe['Created date and time'] > '17:59:59')]['Journal number'])
-    print(dataframe.loc[(dataframe['Created date and time'].dt.time > time(17, 59, 59))][
-              'Journal number'])
+    dataframe = dataframe.loc[(dataframe['Created date and time'].dt.time > time(17, 59, 59))][
+        'Journal number']
+    output_result_csv('unusual_times', dataframe, 'Journal number')
+    # print(dataframe.loc[(dataframe['Created date and time'].dt.time > time(17, 59, 59))][
+    #           'Journal number'])
 
 
 def back_forward_date_entries(dataframe):
     """
     Finding back and forward dates entries done
     """
+    print("back and forward dates is running...")
     dataframe = dataframe[['Journal number', 'Date', 'Created date and time']]
-    print(dataframe.loc[
-              abs(dataframe['Created date and time'] - dataframe['Date']) >= timedelta(days=40)][
-              'Journal number'])
+    dataframe = dataframe.loc[
+        abs(dataframe['Created date and time'] - dataframe['Date']) >= timedelta(days=40)][
+        'Journal number']
+    output_result_csv('back_forward_date_entries', dataframe, 'Journal number')
+    # print(dataframe.loc[
+    #           abs(dataframe['Created date and time'] - dataframe['Date']) >= timedelta(days=40)][
+    #           'Journal number'])
 
 
 def dismissed_employee(dataframe):
@@ -213,29 +242,40 @@ def over_scope_entries(dataframe, treshold=1500000):
     """
     The values greater than treshold
     """
+    print("Over scope entries is running...")
     dataframe = dataframe[['Journal number', 'Amount']]
-    aa = dataframe.loc[dataframe['Amount'] > treshold]['Journal number']
-    output_result_csv('result_01.csv', aa, 'Journal number')
+    dataframe = dataframe.loc[dataframe['Amount'] > treshold]['Journal number']
+    output_result_csv('over_scope_entries', dataframe, 'Journal number')
+    # print(aa)
 
 
 def user_analysis(dataframe):
     """
     Finding employees by name
     """
+    print("Finding employees is running...")
     dataframe = dataframe[['Journal number', 'Created by']]
     employee = ['mabrown', 'fgilmour', 'nmartinez']
     dataframe = dataframe.loc[dataframe['Created by'].isin(employee)]['Journal number']
-    print(dataframe)
+    output_result_csv('user_analysis', dataframe, 'Journal number')
+
+
+# user_analysis(get_dataframe('converted.csv'))
 
 
 def treshold_analysis(dataframe, treshold=15000, deviation=100):
     """
     Finding values which are between given ranges
     """
+    print("Treshold analysis is running...")
     dataframe = dataframe[['Journal number', 'Amount']]
-    print(dataframe.loc[dataframe['Amount'].between(treshold - deviation, treshold + deviation,
-                                                    inclusive=False)][
-              'Journal number'])
+    dataframe = dataframe.loc[
+        dataframe['Amount'].between(treshold - deviation, treshold + deviation, inclusive=False)][
+        'Journal number']
+    output_result_csv('treshold_analysis', dataframe, 'Journal number')
+    # print(dataframe.loc[dataframe['Amount'].between(treshold - deviation, treshold + deviation,
+    #                                                 inclusive=False)][
+    #           'Journal number'])
 
 
 def whole_amounts(dataframe):

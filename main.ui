@@ -30,7 +30,7 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
+       <item row="0" column="0" rowspan="2">
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="spacing">
           <number>8</number>
@@ -98,7 +98,10 @@
         </layout>
        </item>
        <item row="0" column="1">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <widget class="QListWidget" name="listWidget"/>
+       </item>
+       <item row="1" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout">
          <property name="spacing">
           <number>8</number>
          </property>
@@ -115,12 +118,24 @@
           <number>8</number>
          </property>
          <item>
-          <widget class="QListWidget" name="listWidget"/>
+          <widget class="QComboBox" name="cmb_tests"/>
          </item>
          <item>
-          <widget class="QPushButton" name="pb_additional_testing">
+          <widget class="QPushButton" name="pb_test">
+           <property name="minimumSize">
+            <size>
+             <width>75</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>150</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
-            <string>Additional tests</string>
+            <string>Test</string>
            </property>
           </widget>
          </item>
