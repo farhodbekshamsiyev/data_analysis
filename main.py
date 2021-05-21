@@ -134,9 +134,10 @@ class Ui(QtWidgets.QMainWindow):
         # print(index)
 
     def run_dialog(self):
-        print('run dialog hit')
-        a = BackForwardUI()
-        a.exec()
+        pass
+        # print('run dialog hit')
+        # a = BackForwardUI()
+        # a.exec()
 
 
 def main(strings):

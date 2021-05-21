@@ -110,7 +110,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Choose weekend days</string>
+      <string>Choose non-working days</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

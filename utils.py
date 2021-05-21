@@ -94,7 +94,8 @@ def output_result_csv(name, dataframe, column_name):
     # dataframe = dataframe_main.merge(dataframe, how='inner')
     dataframe = dataframe_main.loc[
         dataframe_main['Journal number'].isin(dataframe['Journal number'].tolist())]
-    dataframe.to_csv(f'results/{name}.csv', index=False, encoding='utf-8')
+    # dataframe.to_csv(f'results/{name}.csv', index=False, encoding='utf-8')
+    dataframe.to_excel(f'results/{name}.xlsx', index=False, encoding='utf-8')
 
 
 def programExit(self):
