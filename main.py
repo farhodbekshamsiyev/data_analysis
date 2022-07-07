@@ -1,57 +1,100 @@
 # This is a sample Python script.
-import webbrowser
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.uic.properties import QtGui, QtCore
-
-import utils
-from show_csv import MainWindow
-# from user_input_widgets.user_input_dialogs import BackForwardUI, OutofBoundUI, WeekendUI
-from utils import *
-from checking_data import *
-from PyQt5 import QtWidgets, uic
-import sys
 import os
+import shutil
+import subprocess
+import sys
+import webbrowser
+import platform
+
+from PyQt5 import QtWidgets, uic
+
+from checking_data import *
+from TabWidget import TabWidget
 
 
 class Ui(QtWidgets.QMainWindow):
     fileNames = ""
+    fileNames_gl = []
+    fileNames_tb = []
     all_data_csv = ""
     response = ""
     dataframe = ""
+    dir_name = ""
 
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('main.ui', self)
+        uic.loadUi('user_interface/main.ui', self)
+        # self.setWindowIcon(QIcon('images/pkf.png'))
 
-        self.pb_test.setEnabled(False)
-        self.w = None  # No external window yet.
-        self.UiComponents()
+        self.pb_additional_test.setEnabled(False)
 
-        self.actionOpen.triggered.connect(self.openFile)
-        self.actionSave.triggered.connect(self.saveFile)
-        # self.actionSave_as.triggered.connect(self.quitApp)
-        self.actionClose.triggered.connect(self.clearNames)
-        self.actionExit.triggered.connect(self.quitApp)
+        self.actionOpen.triggered.connect(self.loadGl)
+        self.actionDrop.triggered.connect(self.clearNames)
+        self.actionQuit.triggered.connect(self.quitApp)
+        self.actionResults.triggered.connect(self.viewData)
+        self.listWidget.currentItemChanged.connect(self.initial_testing)
         # self.actionFAQ.triggered.connect(self.quitApp)
-        # self.actionAbout_App.triggered
+        # self.actionAbout.triggered.connect(self.quitApp)
 
-        self.pb_open.clicked.connect(self.openFile)
-        self.pb_clear.clicked.connect(self.clearNames)
+        # self.pb_loadgl.clicked.connect(self.loadGl)
+        # self.pb_loadtb.clicked.connect(self.loadTb)
+        # self.pb_clear.clicked.connect(self.clearNames)
         # self.pb_preprocess.clicked.connect(self.preProcessing)
-        self.pb_viewdata.clicked.connect(self.viewData)
-        self.pb_initial_test.clicked.connect(self.initial_testing)
-        self.pb_test.clicked.connect(self.test_selected_item)
+        # self.pb_viewdata.clicked.connect(self.viewData)
+        # self.pb_initial_test.clicked.connect(self.initial_testing)
+        self.pb_additional_test.clicked.connect(self.additional_tests)
 
-    def openFile(self):
-        self.fileNames = getFileNames(self)
+        # info_message(self, "Starting")
+
+    def loadGl(self):
+        self.listWidget.clear()
+        self.fileNames_gl = getFileNames(self)
+        if not self.fileNames_gl:
+            info_message(self, '0 files are selected')
+            return
+        # self.fileNames_gl.extend(files)
+        # self.listWidget.clear()
+        if self.fileNames_gl:
+            self.dir_name = self.fileNames_gl[0].split('/')[-2]
+            print(self.dir_name)
+            print(self.fileNames_gl)
+            # self.all_data_csv = convert_xls2csv(self.fileNames, "gl_files", "conv_GL")
+            self.listWidget.addItems(map(lambda x: os.path.basename(x), self.fileNames_gl))
         # self.fileNames = list(map(lambda x: os.path.basename(x), self.fileNames))
         # print(self.fileNames)
-        self.all_data_csv = convert_xls2csv(self.fileNames)
-        QMessageBox.information(self, '', "All files processed")
-        self.listWidget.addItems(map(lambda x: os.path.basename(x), self.fileNames))
+        # QMessageBox.information(self, '', "All files processed")
         # print(self.response)
+
+    def loadTb(self):
+        self.fileNames_tb = getFileNames(self)
+        self.dir_name = self.fileNames_tb[0].split('/')[-2]
+        if self.fileNames_tb:
+            # self.all_data_csv = convert_xls2csv(self.fileNames, "tb_files", "conv_TB", True)
+            self.listWidget.addItems(map(lambda x: os.path.basename(x), self.fileNames_tb))
+        # self.fileNames = list(map(lambda x: os.path.basename(x), self.fileNames))
+        # print(self.fileNames)
+        # QMessageBox.information(self, '', "All files processed")
+        # print(self.response)
+
+    def process_gl(self):
+        if self.fileNames_gl:
+            # Preprocessor.delete_rows_and_spaces(self.fileNames_gl, 3, 1)
+            # Preprocessor.clear_formats(self.fileNames_gl)
+            # Preprocessor.xls_to_csv(self.fileNames_gl)
+            self.run_test(self.fileNames_gl)
+        else:
+            info_message(self, "Choose General ledger files first!")
+
+    def concatenate_excels(self, files):
+        name = files[0].split('/')[-1]
+        print(name)
+        check_path('merged')
+        folder = files[0].split('/')[-2]
+        print(folder)
+        df = pd.concat([pd.read_excel(file) for file in files])
+        df.to_excel(f'merged/{name[:7]}.xlsx', index=False, encoding='utf-8-sig')
+        info_message(self, "Concatenation finished successfully!")
+        print('Concatenation finished successfully')
 
     def saveFile(self):
         self.fileNames = getSaveFileName(self)
@@ -60,90 +103,71 @@ class Ui(QtWidgets.QMainWindow):
         print(response)
 
     def clearNames(self):
-        self.listWidget.clear()
-        self.fileNames = ""
-        for f in os.listdir('csv_files'):
-            os.remove(os.path.join('csv_files', f))
-            print(f'all files in folder csv_files are deleted successfully')
-            # os.remove(os.path.join(root, file))
-        if os.path.exists('converted.csv'):
-            os.remove('converted.csv')
-        else:
-            print("The file does not exist")
-        print("All Files removed")
+        self.fileNames_gl = ""
+        self.fileNames_tb = ""
         info_message(self, "Opened Files dropped")
+        self.listWidget.clear()
+        self.pb_additional_test.setEnabled(False)
+        # for f in os.listdir('gl_files'):
+        #     os.remove(os.path.join('gl_files', f))
+        #     print(f'all files in folder gl_files are deleted successfully')
+        #     # os.remove(os.path.join(root, file))
+        #
+        # for f in os.listdir('tb_files'):
+        #     os.remove(os.path.join('tb_files', f))
+        #     print(f'all files in folder tb_files are deleted successfully')
+        #     # os.remove(os.path.join(root, file))
+
+        # if os.path.exists('conv_GL.csv'):
+        #     os.remove('conv_GL.csv')
+        # elif os.path.exists('conv_TB.csv'):
+        #     os.remove('conv_TB.csv')
+        # else:
+        #     print("The file does not exist")
+        # print("All Files removed")
 
     def preProcessing(self):
         pass
 
     def viewData(self):
         path = 'results'
-        # open("results/")
-        # run_on_excel('converted.csv')
-        webbrowser.open(os.path.realpath('results'))
-        # os.system(f'start {os.path.realpath(path)}')
-        # subprocess.Popen(f'explorer {os.path.realpath(path)}')
-        # subprocess.run(['explorer', os.path.realpath(path)])
+        print(platform.system())
+        if platform.system().lower()[:3] == 'win':
+            subprocess.Popen(f'explorer {os.path.realpath(path)}')
+            subprocess.run(['explorer', os.path.realpath(path)])
+        else:
+            webbrowser.open(os.path.realpath('results'))
 
     def quitApp(self):
-        programExit(self)
+        app_quit(self)
 
     def initial_testing(self):
-        self.dataframe = get_dataframe(name='converted.csv')
-        self.dataframe = init_date(self.dataframe)
-        # math_accuracy(self.dataframe)
+        # self.dataframe = get_dataframe(name='conv_GL.csv')
+        # self.dataframe = init_date(self.dataframe)
         # data_integrity_check(self.dataframe)
-        info_message(self, "Initial testing done, additional testing is available!")
-        self.pb_test.setEnabled(True)
+        # math_accuracy(self.dataframe)
+        # finding_wrong_entries(self.dataframe)
+        if self.fileNames_gl:
+            info_message(self, 'Files are loaded!')
+            self.pb_additional_test.setEnabled(True)
+            for f in os.listdir('results'):
+                if os.path.isfile(f):
+                    os.remove(os.path.join('results', f))
+                else:
+                    shutil.rmtree(os.path.join('results', f))
+            print(f'all files in folder results are deleted successfully')
+        else:
+            info_message(self, 'Please load general ledger files!')
 
-    def UiComponents(self):
-        cmb_list_items = ["Finding wrong entries", "Out of bound entries", "Weekend entries",
-                          "Holiday entries", "Unusual times", "Back and forward dates entries",
-                          "Dismissed employee analysis", "Suspicious description",
-                          "Over scope entries", "User analysis", "Treshold analysis"]
-
-        # adding list of items to combo box
-        self.cmb_tests.addItems(cmb_list_items)
-
-    def test_selected_item(self):
-        item = self.cmb_tests.currentText()
-        index = self.cmb_tests.currentIndex()
-        if index == 0:
-            finding_wrong_entries(self.dataframe)
-        if index == 1:
-            out_of_bound_entries(self.dataframe)
-        if index == 2:
-            weekend_entries(self.dataframe)
-        if index == 3:
-            holiday_entries(self.dataframe)
-        if index == 4:
-            unusual_times(self.dataframe)
-        if index == 5:
-            back_forward_date_entries(self.dataframe)
-        if index == 6:
-            dismissed_employee(self.dataframe)
-        if index == 7:
-            suspicious_desc(self.dataframe)
-        if index == 8:
-            over_scope_entries(self.dataframe)
-        if index == 9:
-            user_analysis(self.dataframe)
-        if index == 10:
-            treshold_analysis(self.dataframe)
-        print(item)
-        # print(index)
-
-    def run_dialog(self):
-        pass
-        # print('run dialog hit')
-        # a = BackForwardUI()
-        # a.exec()
+    def additional_tests(self):
+        TabWidget(self.fileNames_gl).show()
 
 
 def main(strings):
     # Use a breakpoint in the code line below to debug your script.
     print(f'{strings}')  # Press Ctrl+F8 to toggle the breakpoint.
-    check_path('csv_files')
+    # check_path('gl_files')
+    # check_path('tb_files')
     check_path('results')
 
 
@@ -156,25 +180,3 @@ if __name__ == '__main__':
     window = Ui()
     window.show()
     sys.exit(app.exec_())
-
-    # csv_name = convert_xls2csv('csv_files')
-    # dataframe = pd.read_csv(csv_name)
-    # dataframe = init_date(dataframe=dataframe)
-    # print(dataframe)
-    # completness_check('combined.csv')
-    # math_accuracy(dataframe)
-    # data_integrity_check(dataframe)
-    # finding_wrong_entries(dataframe)
-    # out_of_bound_entries(dataframe)
-    # weekend_entries(dataframe)
-    # holiday_entries(dataframe)
-    # unusual_times(dataframe)
-    # back_forward_date_entries(dataframe)
-    # dismissed_employee(dataframe)
-    # suspicious_desc(dataframe)
-    # over_scope_entries(dataframe)
-    # user_analysis(dataframe)
-    # treshold_analysis(dataframe)
-
-    # whole_amounts(dataframe)
-    # reversal_entries(dataframe)
